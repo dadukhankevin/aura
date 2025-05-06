@@ -14,7 +14,9 @@ Oh and highly experimental...
 
 Aura introduces LLMs as a compiler, rather than the over-caffeinated intern.
 
-Aura is a language, with syntax rules and Python norms. It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
+### Aura is a domain-specific language that uses English as a high-level type system and prompt scaffold for LLM-compiled Python code.
+
+ It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
 
 Quit yappin here's an example:
 
@@ -26,7 +28,7 @@ desc BothKinds "When returning arrays, return a python list version and numpy ve
 
 def --square_all_values(--input_array: @List):
   """A function that squares all values in an array returns @BothKinds"""
-  --squared_result = all values in @input_array squared
+  --squared_result = all values in input_array squared
   --combined = @BothKinds representation of squared_result
   return combined
 ``` 
@@ -56,14 +58,63 @@ def square_all_values(input_array: List):
 ```
 
 The above example includes everything you need to know about Aura *so far*.
+
+To see more examples...
+## Examples
+
+Explore these examples to see Aura in action:
+
+### PyTorch LSTM Shakespeare
+
+A character-level LSTM model trained on Shakespearean text.
+
+**Compile:**
+```bash
+# Ensure output directory exists
+mkdir -p compiled_python/pytorch_lstm_shakespeare
+
+# Compile the main file (dependencies compiled automatically)
+python compiler/compiler.py examples/pytorch_lstm_shakespeare/main.aura compiled_python/pytorch_lstm_shakespeare/main.py
+
+# Run the compiled code
+python compiled_python/pytorch_lstm_shakespeare/main.py 
+```
+
+### Flask Authentication Server (Conceptual)
+
+Demonstrates setting up a basic Flask server with authentication routes.
+
+**Compile:**
+```bash
+# Ensure output directory exists
+mkdir -p compiled_python/flask_auth_server
+
+# Compile (assuming main file is app.aura)
+python compiler/compiler.py examples/flask_auth_server/app.aura compiled_python/flask_auth_server/app.py 
+```
+
+### Genetic Hello World (Conceptual)
+
+Illustrates a simple genetic algorithm trying to evolve the string "Hello, World!".
+
+**Compile:**
+```bash
+# Ensure output directory exists
+mkdir -p compiled_python/genetic_hello_world
+
+# Compile (assuming main file is main.aura)
+python compiler/compiler.py examples/genetic_hello_world/main.aura compiled_python/genetic_hello_world/main.py
+```
+
+
 You'll notice a few differences compared to normal Python. The first difference is that natural English is included in the code at any point. But it isn't only a prompt, and there are some strict syntax rules, that will make this work.
 
-1.  **The Double Dash (`--`)**: Indicates variables or definitions (`--my_var`, `def --my_func`) that you want literally in the compiled Python code. The compiler ensures these names exist in the output, throwing an error if the LLM forgets them.
-2.  **The At Symbol (`@`)**: References types (`@List`), other Aura classes/functions (`@MyClass`, `@my_helper_func`), or imported Aura modules/items (`@my_module.some_item`). The compiler provides the definition or description of the referenced item as context to the LLM.
-3.  **The `desc` Keyword**: Defines a semantic type or rule description (e.g., `desc MyType "Description here"`). This context is provided to the LLM when `@MyType` is referenced.
-4.  **Docstrings (`"""..."""`)**: Required after `class` and `def` lines. They serve as standard Python docstrings and also provide crucial high-level context to the LLM compiler.
-5.  **Natural Language Prompts**: Lines within Aura function/method bodies that are not comments or strict Aura syntax are treated as instructions for the LLM compiler to generate the corresponding Python code.
-6.  **Comments (`#`)**: Standard Python comments are ignored by the LLM compiler and are not included in the prompts.
+1.  **The Literal Symbol (`--`)**: Indicates variables or definitions (`--my_var`, `def --my_func`) that must be preserved verbatim in the compiled Python code. The compiler ensures these names exist in the output, throwing an error if the LLM forgets them.
+2.  **The Reference Token (`@`)**: References types (`@List`), other Aura classes/functions (`@MyClass`, `@my_helper_func`), or imported Aura modules/items (`@my_module.some_item`). The compiler provides the definition or description of the referenced item as context to the LLM.
+3.  **The Description Keyword (`desc`)**: Defines a semantic type or rule description (e.g., `desc MyType "Description here"`). This context is provided to the LLM when `@MyType` is referenced.
+4.  **Documentation Strings (`"""..."""`)**: Required after `class` and `def` lines. They serve as standard Python docstrings and also provide crucial high-level context to the LLM compiler.
+5.  **Natural Language Instructions**: Lines within Aura function/method bodies that are not comments or strict Aura syntax are treated as instructions for the LLM compiler to generate the corresponding Python code.
+6.  **Comment Tokens (`#`)**: Standard Python comments are ignored by the LLM compiler and are not included in the prompts.
 
 ### Imports in Aura
 
