@@ -1,14 +1,31 @@
 # Aura
 
-You know the feeling... You're sitting there, vibe-coding away, and suddenly it hits you: "I have no idea how my codebase works anymore".
+![MIT License](https://img.shields.io/badge/license-MIT-blue) ![Experimental](https://img.shields.io/badge/status-experimental-orange)
+
+> You know the feeling... You're sitting there, vibe-coding away, and suddenly it hits you: "I have no idea how my codebase works anymore".
 
 You've tried telling `claude-3.7-sonnet-new-final-smartest-max` to not "change too much" and to "please please only do what I tell you or else they will fire me." 
 
 Only to see thousands of inserted lines.
 
-Aura is made for you. It's what "English as a programming language" *should* be. Reproducible, high level, precise. 
+Aura is made for you. It's what "English as a programming language" *should* be. **Reproducible, high level, precise.** 
 
-Oh and highly experimental...
+> ⚠️ **Note:** Aura is highly experimental...
+
+---
+
+## Table of Contents
+- [What is Aura Code?](#what-is-aura-code)
+- [Examples](#examples)
+- [Syntax Highlights](#syntax-highlights)
+- [Imports in Aura](#imports-in-aura)
+- [Getting Started](#getting-started)
+- [Why Aura?](#why-aura)
+- [Contributing](#contributing)
+- [License](#license)
+- [Example](#example)
+
+---
 
 ## What is Aura Code?
 
@@ -16,7 +33,7 @@ Aura introduces LLMs as a compiler, rather than the over-caffeinated intern.
 
 ### Aura is a domain-specific language that uses English as a high-level type system and prompt scaffold for LLM-compiled Python code.
 
- It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
+It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
 
 Quit yappin here's an example:
 
@@ -59,9 +76,10 @@ def square_all_values(input_array: List):
 
 ```
 
-The above example includes everything you need to know about Aura *so far*.
+> The above example includes everything you need to know about Aura *so far*.
 
-To see more examples...
+---
+
 ## Examples
 
 Explore these examples to see Aura in action:
@@ -108,17 +126,24 @@ mkdir -p compiled_python/genetic_hello_world
 python compiler/compiler.py examples/genetic_hello_world/main.aura compiled_python/genetic_hello_world/main.py
 ```
 
+---
+
+## Syntax Highlights
 
 You'll notice a few differences compared to normal Python. The first difference is that natural English is included in the code at any point. But it isn't only a prompt, and there are some strict syntax rules, that will make this work.
 
-1.  **The Literal Symbol (`--`)**: Indicates variables or definitions (`--my_var`, `def --my_func`) that must be preserved verbatim in the compiled Python code. The compiler ensures these names exist in the output, throwing an error if the LLM forgets them.
-2.  **The Reference Token (`@`)**: References types (`@List`), other Aura classes/functions (`@MyClass`, `@my_helper_func`), or imported Aura modules/items (`@my_module.some_item`). The compiler provides the definition or description of the referenced item as context to the LLM.
-3.  **The Description Keyword (`desc`)**: Defines a semantic type or rule description (e.g., `desc MyType "Description here"`). This context is provided to the LLM when `@MyType` is referenced.
-4.  **Documentation Strings (`"""..."""`)**: Required after `class` and `def` lines. They serve as standard Python docstrings and also provide crucial high-level context to the LLM compiler.
-5.  **Natural Language Instructions**: Lines within Aura function/method bodies that are not comments or strict Aura syntax are treated as instructions for the LLM compiler to generate the corresponding Python code.
-6.  **Comment Tokens (`#`)**: Standard Python comments are ignored by the LLM compiler and are not included in the prompts.
+| Feature | Description |
+|---------|-------------|
+| **The Literal Symbol (`--`)** | Indicates variables or definitions (`--my_var`, `def --my_func`) that must be preserved verbatim in the compiled Python code. The compiler ensures these names exist in the output, throwing an error if the LLM forgets them. |
+| **The Reference Token (`@`)** | References types (`@List`), other Aura classes/functions (`@MyClass`, `@my_helper_func`), or imported Aura modules/items (`@my_module.some_item`). The compiler provides the definition or description of the referenced item as context to the LLM. |
+| **The Description Keyword (`desc`)** | Defines a semantic type or rule description (e.g., `desc MyType "Description here"`). This context is provided to the LLM when `@MyType` is referenced. |
+| **Documentation Strings (`"""..."""`)** | Required after `class` and `def` lines. They serve as standard Python docstrings and also provide crucial high-level context to the LLM compiler. |
+| **Natural Language Instructions** | Lines within Aura function/method bodies that are not comments or strict Aura syntax are treated as instructions for the LLM compiler to generate the corresponding Python code. |
+| **Comment Tokens (`#`)** | Standard Python comments are ignored by the LLM compiler and are not included in the prompts. |
 
-### Imports in Aura
+---
+
+## Imports in Aura
 
 The `imports { ... }` block at the top of the file handles both standard Python imports and imports of other Aura modules.
 
@@ -148,6 +173,8 @@ imports {
 *   You can then reference items from the imported module using the alias: `@utils.some_function`, `@base.BaseClass`.
 *   LLM-generated code blocks will not include any import statements. If your code requires additional modules, add them to the `imports` block at the top of the Aura file.
 
+---
+
 ## Getting Started
 
 ### Clone & Setup
@@ -171,7 +198,7 @@ The compiler uses an LLM (currently via Groq, but configurable) to generate Pyth
 1.  **Copy the example:** `cp .env.example .env`
 2.  **Edit `.env`:** Open the newly created `.env` file and replace `"YOUR_AURA_LLM_API_KEY_HERE"` with your actual LLM API key. You can optionally set the `AURA_LLM_BASE_URL` if you are using a different endpoint.
 
-The `.env` file is included in `.gitignore` to prevent accidentally committing your key.
+> 💡 The `.env` file is included in `.gitignore` to prevent accidentally committing your key.
 
 ### Using the Compiler
 
@@ -189,7 +216,9 @@ python compiler/compiler.py path/to/module.aura path/to/output.py
 python compiler/compiler.py aura_src_dir compiled_python
 ```
 
-The compiler will automatically detect and compile imported `.aura` modules first.
+> The compiler will automatically detect and compile imported `.aura` modules first.
+
+---
 
 ## Why Aura?
 
@@ -200,6 +229,9 @@ Aura streamlines the creation of Python classes and data models by combining:
 3. **AI-Assisted Code Generation** to fill in method bodies and reduce boilerplate.
 
 Use Aura when you want precise control over your project *and* english as code.
+
+---
+
 ## Contributing
 
 Contributions welcome! Please fork the repo and open PRs for:
@@ -209,10 +241,14 @@ Contributions welcome! Please fork the repo and open PRs for:
 - Enhanced LLM compiling strategies
 - Performance optimizations
 
+---
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 Please attribute (Daniel Losey) (:
+
+---
 
 ## Example
 
