@@ -19,7 +19,7 @@ Aura is a language, with syntax rules and Python norms. It lets you smoothly int
 Quit yappin here's an example:
 
 **Aura Code (`example.aura`)**
-```aura
+```py
 imports {
   import numpy
 }
@@ -70,7 +70,7 @@ You'll notice a few differences compared to normal Python. The first difference 
 
 The `imports { ... }` block at the top of the file handles both standard Python imports and imports of other Aura modules.
 
-```aura
+```py
 imports {
   # Standard Python Import (passed directly to output)
   import os 
@@ -101,7 +101,7 @@ imports {
 ### Clone & Setup
 
 ```bash
-git clone <your-repo-url> aura-project
+git clone https://github.com/dadukhankevin/aura aura-project
 cd aura-project
 python3 -m venv .venv
 source .venv/bin/activate
