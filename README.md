@@ -20,7 +20,9 @@ Aura introduces LLMs as a compiler, rather than the over-caffeinated intern.
 
 Quit yappin here's an example:
 
-**Aura Code (`example.aura`)**```py
+**Aura Code (`example.aura`)**
+
+```py
 imports {
   import numpy
 }
