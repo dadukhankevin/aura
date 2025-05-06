@@ -1,0 +1,7 @@
+openai
+lark==0.12.0
+markdown-it-py==3.0.0
+requests
+urllib3
+Flask
+python-dotenv
