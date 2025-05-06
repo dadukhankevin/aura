@@ -6,20 +6,19 @@ You've tried telling `claude-3.7-sonnet-new-final-smartest-max` to not "change t
 
 Only to see thousands of inserted lines.
 
-Aura is made for you. It's what "English as a programming language" *should* be. Reproducable, high level, precice. 
+Aura is made for you. It's what "English as a programming language" *should* be. Reproducible, high level, precise. 
 
 Oh and highly experimental...
 
 ## What is Aura Code?
 
-Aura introduces LLMs as a compiler, rather than the over-caffinated intern.
+Aura introduces LLMs as a compiler, rather than the over-caffeinated intern.
 
-Aura is a language, with syntax rules and Python norms. It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benifits of natural language when you need it.
+Aura is a language, with syntax rules and Python norms. It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
 
 Quit yappin here's an example:
 
-**Aura Code (`example.aura`)**
-```py
+**Aura Code (`example.aura`)**```py
 imports {
   import numpy
 }
