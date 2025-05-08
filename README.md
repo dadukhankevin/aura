@@ -1,10 +1,3 @@
-**Updating README syntax**
-
-The user wants a README similar to the first one they provided, but with an updated section for syntax rules. They've shared the original plus new syntax highlights, such as using "desc def", "desc class", braces, unified definitions, and reference tokens. I need to keep the structure of the original README but update the "Syntax Highlights" and code examples to reflect these changes. I'll carefully revise the example to show the new "desc def" format.
-
-
-Thought for 4 seconds
-
 
 # Aura
 
