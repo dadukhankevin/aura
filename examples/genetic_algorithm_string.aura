@@ -1,0 +1,129 @@
+\
+imports {
+  import random
+  import string # For character sets
+}
+
+desc TargetString "The target string that the genetic algorithm aims to evolve. This is a simple string of characters."
+desc Chromosome "Represents a single candidate solution in the genetic algorithm, typically a string of characters with the same length as the @TargetString "
+desc Population "A collection (list) of @Chromosome instances representing one generation."
+desc FitnessScore "A numerical value indicating how well a @Chromosome matches the @TargetString. Higher scores are better."
+desc Dict "A Python dictionary, typically mapping keys to values (e.g., a @Chromosome to its @FitnessScore )."
+
+desc def create_chromosome(--length: int): "@Chromosome Creates a new chromosome (string) of a given length consisting of random printable ASCII characters."
+{
+  Generate a string of the specified 'length'.
+  Each character in the string should be a randomly chosen printable ASCII character (letters, digits, punctuation, whitespace).
+  Return the generated string as a @Chromosome
+}
+
+desc def calculate_fitness(--chromosome: @Chromosome, --target: @TargetString): "@FitnessScore Calculates the fitness of a chromosome by comparing it to the target string."
+{
+  The fitness score is the number of characters in the '--chromosome' that exactly match the character at the same position in the '--target' string.
+  Ensure both strings are of the same length before comparison, or handle gracefully (though @create_chromosome should ensure this if target length is used).
+  Return the integer score.
+}
+
+desc def select_parents(--population: @Population, --fitness_map: @Dict, --num_parents_to_select: int): "Selects a specified number of parent @Chromosome instances from the population based on their fitness."
+{
+  Given the '--population' and a '--fitness_map' (mapping each chromosome string to its @FitnessScore), select '--num_parents_to_select'.
+  Sort the population by fitness (descending based on the fitness_map) and pick the top individuals.
+  Return a list of the selected parent @Chromosome instances.
+}
+
+desc def crossover(--parent1: @Chromosome, --parent2: @Chromosome): "@Chromosome Creates a new child chromosome by combining genetic material from two parent chromosomes using single-point crossover."
+{
+  Assume '--parent1' and '--parent2' are strings of the same length.
+  Choose a random crossover point (an index) within the length of the chromosomes.
+  The child chromosome is formed by taking characters from '--parent1' up to (but not including) the crossover point,
+  and characters from '--parent2' from the crossover point to the end.
+  Return the new child @Chromosome
+}
+
+desc def mutate(--chromosome: @Chromosome, --mutation_rate: float): "@Chromosome Randomly alters characters in a chromosome based on the mutation rate."
+{
+  For each character in the '--chromosome' string:
+  Generate a random float between 0.0 and 1.0.
+  If this random float is less than the '--mutation_rate':
+    Replace the character at the current position with a new random printable ASCII character.
+  Return the (potentially) mutated @Chromosome
+}
+
+desc def create_next_generation(--current_population: @Population, --target_string: @TargetString, --mutation_rate: float, --elitism_count: int, --population_size: int): "@Population Evolves the current population to produce a new generation."
+{
+  1. Calculate Fitness: Compute the @FitnessScore for each @Chromosome in the '--current_population' relative to the '--target_string' using @calculate_fitness . Store these in a dictionary mapping chromosome to fitness (@Dict ).
+
+  2. Elitism: Select the top '--elitism_count' @Chromosome from the '--current_population' based on their fitness scores. These elites will be directly added to the next generation.
+
+  3. Parent Selection: Select parents from the '--current_population' using @select_parents, providing the fitness map from step 1. The number of parents to select should be enough to produce (population_size - elitism_count) children.
+
+  4. Crossover & Mutation:
+     Create a list of offspring.
+     Repeatedly (until enough offspring are generated to fill the new population alongside elites):
+       Select two parents from the list of selected parents (e.g., randomly).
+       Create a child @Chromosome using @crossover with these two parents.
+       Apply @mutate to the child @Chromosome with the given '--mutation_rate'.
+       Add the mutated child to the offspring list.
+
+  5. Form New Population: The new @Population consists of the elite @Chromosome instances and the generated (and mutated) offspring. Ensure the total size is equal to '--population_size'.
+  Return the new @Population
+}
+
+desc def initialize_population(--population_size: int, --chromosome_length: int): "Creates an initial population of random chromosomes."
+{ 
+  @Chromosome
+  @create_chromosome
+  Create a list of '--population_size' chromosomes.
+  Each chromosome should be generated using create_chromosome() with the given '--chromosome_length'.
+  Return this population_size
+}
+
+desc def run_evolutionary_process(--target_string: @TargetString, --chromosome_length: int, --population_size: int, --mutation_rate: float, --elitism_count: int, --num_generations: int): "Runs the main genetic algorithm loop for a specified number of generations and returns the best @Chromosome found overall."
+{
+  1. Initialize Population: Create an initial @Population of '--population_size' individuals, each of '--chromosome_length', using @initialize_population
+  Let this be 'current_population'.
+
+  2. Initialize Tracking: 
+     Set 'best_overall_fitness' to -1.
+     Set 'best_overall_chromosome' to an empty string or None.
+
+  3. Loop through Generations: For each generation from 0 up to '--num_generations' - 1:
+     a. Calculate Fitness Map: For each chromosome in 'current_population', calculate its fitness against the '--target_string' using @calculate_fitness . Store these in a fitness map (@Dict from chromosome to @FitnessScore ).
+     b. Find Generation Best: Identify the chromosome with the highest fitness in the current generation from the fitness map. Let its fitness be 'current_best_fitness' and the chromosome be 'current_best_chromosome'.
+     c. Update Overall Best: If 'current_best_fitness' is greater than 'best_overall_fitness', update 'best_overall_fitness' to 'current_best_fitness' and 'best_overall_chromosome' to 'current_best_chromosome'. Print the progress: e.g., "Gen [generation_number]: Best Fitness: [best_overall_fitness]/[chromosome_length] -> [best_overall_chromosome]".
+     d. Check for Solution: If 'best_overall_fitness' equals '--chromosome_length', print "Solution found!" and break the loop (return best_overall_chromosome).
+     e. Evolve: Create the 'next_population' using @create_next_generation , passing 'current_population', '--target_string', '--mutation_rate', '--elitism_count', and '--population_size'. Update 'current_population' to be this 'next_population'.
+
+  4. After Loop: If the loop completes and a perfect solution wasn't found, print "Finished generations. Best found:" and display the 'best_overall_chromosome' and its 'best_overall_fitness' relative to '--chromosome_length'.
+  
+  5. Return the 'best_overall_chromosome'.
+}
+
+
+    
+# MAIN
+if __name__ == '__main__':
+
+    def run_ga_experiment():
+        TARGET_STRING = "AuraIsCool!"
+        CHROMOSOME_LENGTH = len(TARGET_STRING)
+        POPULATION_SIZE = 100
+        MUTATION_RATE = 0.02  # 2% chance per character
+        ELITISM_COUNT = 5     # Carry over the best 5 individuals
+        NUMBER_OF_GENERATIONS = 300 # Reduced for potentially faster demonstration
+
+        print(f"Target: '{TARGET_STRING}' (Length: {CHROMOSOME_LENGTH})")
+        print(f"Population Size: {POPULATION_SIZE}, Mutation Rate: {MUTATION_RATE*100}%, Elitism: {ELITISM_COUNT}, Generations: {NUMBER_OF_GENERATIONS}")
+
+        final_best_chromosome = run_evolutionary_process(
+            target_string=TARGET_STRING,
+            chromosome_length=CHROMOSOME_LENGTH,
+            population_size=POPULATION_SIZE,
+            mutation_rate=MUTATION_RATE,
+            elitism_count=ELITISM_COUNT,
+            num_generations=NUMBER_OF_GENERATIONS
+        )
+
+        print(f"\\nEvolutionary process complete. Final best chromosome from run: '{final_best_chromosome}'")
+
+    run_ga_experiment()
