@@ -1,4 +1,3 @@
-
 # Aura
 
 ![MIT License](https://img.shields.io/badge/license-MIT-blue) ![Experimental](https://img.shields.io/badge/status-experimental-orange)
@@ -51,10 +50,19 @@ desc BothKinds "Return a Python list and numpy array of squared values"
 desc def square_all_values(--input_array: @List):
   "@BothKinds"
 {
-  --squared_list = [ x**2 for x in --input_array ]
-  --array        = numpy.array(--squared_list)
-  this returns (--squared_list, --array)
+   Squares everything in the list returns @BothKinds
 }
+
+# MAIN This will be carried over as python *exactly* as it is pure python!
+def main():
+    test_array = [1, 2, 3, 4, 5]
+    list_result, np_result = square_all_values(test_array)
+    print("Original array:", test_array)
+    print("List result:", list_result)
+    print("NumPy array result:", np_result)
+
+if __name__ == '__main__':
+    main() 
 ```
 
 **Compiled Python Output (`example_compiled.py`)**
@@ -129,11 +137,12 @@ Aura's new syntax uses explicit `desc def`/`desc class`, quoted descriptions, an
 | **`desc` keyword**             | Introduces a semantic declaration—types, functions, or classes. Always followed by a quoted description. |
 | **`desc def` / `desc class`**  | Define functions or classes. Example:<br><br>desc def name(--args): "Docstring" {<br>  body<br>}<br>desc class Name(--args): "Docstring" {<br>  body<br>}<br>|
 | **Braces (`{ … }`)**           | Delimit the block of English‑first instructions or hints. Eliminates Python‑style indentation ambiguity. |
-| **Literal symbol (`--`)**      | Marks parameters and variables that **must** appear verbatim in the compiled Python (e.g., `--my_var`). |
+| **Literal symbol (`--`)**      | Marks parameters and variables that **must** appear verbatim in the compiled Python (e.g., `--my_var`). The compiler validates their presence in the generated code. |
 | **Reference token (`@`)**      | Pulls in **only** the quoted description for a declared symbol (`@MyType`, `@my_func`, `@MyClass.method`). Used in bodies to surface high‑level intent to the LLM without re‑generating code for that symbol. |
 | **Quoted descriptions**        | Immediately after `desc`, the quoted string becomes the docstring in Python. |
 | **Natural Language Instructions** | Lines inside braces (that aren't `--` or `@` syntax) are prompts for the LLM to generate the corresponding Python logic. |
 | **Comment tokens (`#`)**       | Standard Python comments. Ignored by the LLM compiler and not part of prompts. |
+| **`# MAIN` section**           | Code following a `# MAIN` line at the end of an Aura file is copied verbatim to the compiled Python output. Ideal for entry points and pure Python logic. |
 
 ---
 
@@ -175,15 +184,50 @@ The compiler will automatically detect and compile imported `.aura` modules firs
 
 ---
 
+## Compiler Feedback: Errors & Warnings
+
+Aura's compiler provides rich feedback, including issues reported directly by the LLM during compilation. This helps you iterate on your Aura code effectively. Errors and warnings are printed to the console (`stderr`).
+
+### Fatal Errors (Halts Compilation for the File)
+
+If the LLM or the compiler encounters a critical issue, compilation for that specific file will stop, and an error message will be displayed:
+
+*   **`AuraAmbiguityError`**: Reported by the LLM if an Aura block is too vague or unclear to translate confidently.
+    *   *Fix*: Refine the Aura block's description or instructions to be more specific.
+*   **`AuraImportNeededError`**: Reported by the LLM if a block requires a Python module that isn't listed in the `imports {...}` section (e.g., for GUI, networking). The LLM will often suggest a module or type of module.
+    *   *Fix*: Add the required import to your Aura file's `imports {}` block.
+*   **`AuraUncompilableError`**: Reported by the LLM if a block is fundamentally uncompilable due to logical contradictions, requests violating core Python principles, or features beyond its design. The LLM will provide a reason.
+    *   *Fix*: Re-evaluate the logic or approach in your Aura block based on the LLM's explanation.
+*   **`AuraCompilationError` (Compiler Validation)**: Raised by the Aura compiler itself if a validation fails *after* LLM generation. For example:
+    *   **Missing `--parameter`**: If a variable declared with `--` in an Aura signature (e.g., `--my_var`) is not found in the LLM's generated Python code for that block.
+    *   *Fix*: Ensure your Aura block's instructions lead the LLM to use all declared `--` parameters, or adjust the signature.
+*   **LLM Processing Errors**: Generic errors from the LLM if it encounters an internal issue.
+
+### Warnings (Non-Fatal)
+
+The LLM can also issue warnings for non-critical issues. Compilation will proceed, but you should review these:
+
+*   **Structure**: Warnings appear as `⚠️ (WarningTypeName): Explanation...` in the console.
+*   **Examples**: `PotentialPerformanceIssue`, `MinorDeviation`, `BestPracticeSuggestion`, `PartialImplementation` (if the LLM could only partially fulfill a request).
+*   **File Status**: If a file has warnings, its final processing message will be marked with `⚠️ Processed ...` instead of `✅ Processed ...`.
+
+**Tips for Effective Aura:**
+
+*   **Be Specific**: Clear, unambiguous instructions in Aura blocks help avoid `AuraAmbiguityError`.
+*   **Declare Imports**: Ensure all necessary Python modules are in the `imports {}` block to prevent `AuraImportNeededError`.
+*   **Use `--params` Wisely**: The `--` syntax guarantees parameter presence, but ensure your English prompts guide the LLM to use them.
+
+---
+
 ## Why Aura?
 
 Aura streamlines Python development by combining:
 
 1. **High‑level DSL syntax** for concise, intent‑driven code.
-2. **Static validation** to catch missing `--` variables or undeclared references.
+2. **Robust compiler feedback**, including LLM-reported errors/warnings and static validations (like ensuring `--` variables are used or references are declared). This creates a more predictable and reliable interaction with AI-assisted code generation.
 3. **AI‑assisted generation** to fill in method bodies from English instructions.
 
-Use Aura when you want precise control *and* the expressiveness of English.
+Use Aura when you want precise control, the expressiveness of English, and a smarter, more communicative compilation process.
 
 ---
 
@@ -192,9 +236,10 @@ Use Aura when you want precise control *and* the expressiveness of English.
 Contributions welcome! Please fork the repo and open PRs for:
 
 * New syntax features
-* Enhanced error messages
-* Improved LLM compilation strategies
+* Enhanced error messages or compiler validations
+* Improved LLM compilation strategies and prompt engineering
 * Performance optimizations
+* More examples!
 
 ---
 

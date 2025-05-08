@@ -3,12 +3,12 @@ imports {
 }
 
 desc BothKinds "Return a Python list and numpy array of squared values"
+desc List "a python list"
 
 desc def square_all_values(--input_array: @List):
   "@BothKinds"
 {
    Squares everything in the list returns @BothKinds
-   also display a popup window showing the results
 }
 
 # MAIN

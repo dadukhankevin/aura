@@ -70,65 +70,6 @@ class AuraModule:
     blocks: List[BlockDecl]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PARSER
-# ─────────────────────────────────────────────────────────────────────────────
-class AuraParser:
-    IMPORTS_RE = re.compile(r"^imports\s*{(?P<body>.*?)^}\s*", re.S | re.M)
-    IMPORT_LINE_RE = re.compile(r"^\s*(?P<line>[^#\n]+)", re.M)
-    TYPE_RE = re.compile(r"^desc\s+(?P<name>\w+)\s+\"(?P<doc>.*?)\"", re.M)
-    BLOCK_HEADER_RE = re.compile(
-        r"^desc\s+(?P<kind>def|class)\s+(?P<name>\w+)\((?P<sig>[^)]*)\):\s*\"(?P<doc>.*?)\"",
-        re.M
-    )
-
-    def parse(self, text: str, module_name: str) -> AuraModule:
-        imports, types, blocks = [], [], []
-        # Imports
-        m_imp = self.IMPORTS_RE.search(text)
-        if m_imp:
-            for m_line in self.IMPORT_LINE_RE.finditer(m_imp.group('body')):
-                line = m_line.group('line').strip()
-                if not line:
-                    continue
-                is_aura = line.startswith('import aura')
-                alias = None
-                target = None
-                if is_aura:
-                    parts = line.split()
-                    target = parts[2]
-                    if 'as' in parts:
-                        alias = parts[-1]
-                imports.append(ImportDecl(raw=line, is_aura=is_aura, alias=alias, target=target))
-        # Types
-        for m in self.TYPE_RE.finditer(text):
-            types.append(TypeDecl(name=m.group('name'), doc=m.group('doc')))
-        # Blocks
-        for m in self.BLOCK_HEADER_RE.finditer(text):
-            body, _ = self._extract_braces(text, m.end())
-            blocks.append(BlockDecl(
-                kind=m.group('kind'), name=m.group('name'),
-                signature=m.group('sig'), doc=m.group('doc'), body=body.strip()
-            ))
-        return AuraModule(module_name, imports, types, blocks)
-
-    def _extract_braces(self, text: str, start: int) -> tuple[str, int]:
-        depth = 0; buf: List[str] = []
-        i = start
-        while i < len(text):
-            ch = text[i]
-            if ch == '{':
-                depth += 1
-                if depth == 1:
-                    i += 1
-                    continue
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    return ''.join(buf), i+1
-            buf.append(ch); i += 1
-        raise SyntaxError("Unmatched '{'")
-
-# ─────────────────────────────────────────────────────────────────────────────
 # CUSTOM COMPILER EXCEPTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 class AuraCompilationError(Exception):
@@ -148,6 +89,93 @@ class AuraImportNeededError(AuraCompilationError):
 class AuraUncompilableError(AuraCompilationError):
     """Raised when the LLM deems an Aura block fundamentally uncompilable for a given reason."""
     pass
+
+class AuraMissingDescriptionError(AuraCompilationError):
+    """Raised when an Aura 'desc' declaration is missing its description."""
+    def __init__(self, item_name: str, item_kind: str, filename: str):
+        super().__init__(f"In file '{filename}', the {item_kind} '{item_name}' is missing a required description. All 'desc' declarations must be followed by a non-empty quoted string.")
+        self.item_name = item_name
+        self.item_kind = item_kind
+        self.filename = filename
+
+class AuraUnresolvedReferenceError(AuraCompilationError):
+    """Raised when an @reference cannot be resolved."""
+    def __init__(self, unresolved_refs: List[str], block_name: str, filename: str):
+        super().__init__(
+            f"In file '{filename}', within block '{block_name}', the following @references could not be resolved: {', '.join(sorted(unresolved_refs))}. "
+            f"Ensure they are defined with 'desc' in the current module or a correctly imported Aura module, and that their descriptions are not empty."
+        )
+        self.unresolved_refs = unresolved_refs
+        self.block_name = block_name
+        self.filename = filename
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PARSER
+# ─────────────────────────────────────────────────────────────────────────────
+class AuraParser:
+    IMPORTS_RE = re.compile(r"^imports\s*{(?P<body>.*?)^}\s*", re.S | re.M)
+    IMPORT_LINE_RE = re.compile(r"^\s*(?P<line>[^#\n]+)", re.M)
+    TYPE_RE = re.compile(r"^desc\s+(?P<name>\w+)\s+\"(?P<doc>.*?)\"", re.M)
+    BLOCK_HEADER_RE = re.compile(
+        r"^desc\s+(?P<kind>def|class)\s+(?P<name>\w+)\((?P<sig>[^)]*)\):\s*\"(?P<doc>.*?)\"",
+        re.M
+    )
+
+    def parse(self, text: str, filename: str) -> AuraModule:
+        imports, types, blocks = [], [], []
+        # Imports
+        m_imp = self.IMPORTS_RE.search(text)
+        if m_imp:
+            for m_line in self.IMPORT_LINE_RE.finditer(m_imp.group('body')):
+                line = m_line.group('line').strip()
+                if not line:
+                    continue
+                is_aura = line.startswith('import aura')
+                alias = None
+                target = None
+                if is_aura:
+                    parts = line.split()
+                    target = parts[2]
+                    if 'as' in parts:
+                        alias = parts[-1]
+                imports.append(ImportDecl(raw=line, is_aura=is_aura, alias=alias, target=target))
+        # Types
+        for m in self.TYPE_RE.finditer(text):
+            doc = m.group('doc').strip()
+            if not doc:
+                raise AuraMissingDescriptionError(item_name=m.group('name'), item_kind='type', filename=filename)
+            types.append(TypeDecl(name=m.group('name'), doc=doc))
+        # Blocks
+        for m in self.BLOCK_HEADER_RE.finditer(text):
+            doc = m.group('doc').strip()
+            kind = m.group('kind')
+            name = m.group('name')
+            if not doc:
+                raise AuraMissingDescriptionError(item_name=name, item_kind=kind, filename=filename)
+            
+            body_text, _ = self._extract_braces(text, m.end())
+            blocks.append(BlockDecl(
+                kind=kind, name=name,
+                signature=m.group('sig'), doc=doc, body=body_text.strip()
+            ))
+        return AuraModule(Path(filename).stem, imports, types, blocks)
+
+    def _extract_braces(self, text: str, start: int) -> tuple[str, int]:
+        depth = 0; buf: List[str] = []
+        i = start
+        while i < len(text):
+            ch = text[i]
+            if ch == '{':
+                depth += 1
+                if depth == 1:
+                    i += 1
+                    continue
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    return ''.join(buf), i+1
+            buf.append(ch); i += 1
+        raise SyntaxError("Unmatched '{'")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LLM PROMPTER
@@ -189,9 +217,10 @@ class LLMPrompter:
         self,
         block: BlockDecl,
         local_mod: AuraModule,
-        imported: Dict[str, AuraModule]
+        imported: Dict[str, AuraModule],
+        filename: str
     ) -> tuple[str, list[dict[str, str]]]:
-        prompt = self._build_prompt(block, local_mod, imported)
+        prompt = self._build_prompt(block, local_mod, imported, filename, block.name)
         
         messages: List[Dict[str, str]] = [
             {"role": "system", "content": LLM_SYSTEM},
@@ -205,8 +234,7 @@ class LLMPrompter:
         )
         content = resp.choices[0].message.content
         if content is None:
-            # This would be an API/network error, not an LLM-defined error
-            raise RuntimeError(f"LLM API error: No content received for block {block.name}")
+            raise RuntimeError(f"LLM API error: No content received for block {block.name} in {filename}")
             
         data = json.loads(content)
         warnings_list = data.get('warnings', [])
@@ -215,29 +243,27 @@ class LLMPrompter:
         if llm_error:
             error_type = llm_error.get('type')
             error_message = llm_error.get('message', 'No error message provided by LLM.')
-
             if error_type == "AmbiguityError":
-                raise AuraAmbiguityError(f"LLM Ambiguity Error for block '{block.name}': {error_message}")
+                raise AuraAmbiguityError(f"LLM Ambiguity Error for block '{block.name}' in {filename}: {error_message}")
             elif error_type == "ImportNeededError":
-                module_name = llm_error.get('details', {}).get('module_name')
-                full_message = f"LLM Import Needed Error for block '{block.name}': {error_message}"
-                if module_name:
-                    full_message += f" (Suggested module: {module_name})"
-                raise AuraImportNeededError(full_message, module_name=module_name)
+                module_name_detail = llm_error.get('details', {}).get('module_name')
+                full_message = f"LLM Import Needed Error for block '{block.name}' in {filename}: {error_message}"
+                if module_name_detail:
+                    full_message += f" (Suggested module: {module_name_detail})"
+                raise AuraImportNeededError(full_message, module_name=module_name_detail)
             elif error_type == "UncompilableError":
-                raise AuraUncompilableError(f"LLM Uncompilable Error for block '{block.name}': {error_message}")
-            else: # General LLM processing error or other unspecified error
-                raise RuntimeError(f"LLM Processing Error for block '{block.name}' (type: {error_type or 'Unknown'}): {error_message}")
+                raise AuraUncompilableError(f"LLM Uncompilable Error for block '{block.name}' in {filename}: {error_message}")
+            else: 
+                raise RuntimeError(f"LLM Processing Error for block '{block.name}' in {filename} (type: {error_type or 'Unknown'}): {error_message}")
         
         generated_code = data.get('code')
         if generated_code is None:
-            # This should only happen if llm_error was also set. If not, it's an invalid response from LLM.
-            raise RuntimeError(f"LLM Error: Received null code for block '{block.name}' without a corresponding fatal error object. LLM Response: {content}")
+            raise RuntimeError(f"LLM Error: Received null code for block '{block.name}' in {filename} without a corresponding fatal error object. LLM Response: {content}")
         
         generated_code = generated_code.rstrip()
 
         # Validate that all --params from signature are in the generated code
-        declared_params = re.findall(r"--(\\w+)", block.signature)
+        declared_params = re.findall(r"--(\\\w+)", block.signature)
         missing_params = []
         for param_name in declared_params:
             if not re.search(r'\\b' + re.escape(param_name) + r'\\b', generated_code):
@@ -245,12 +271,11 @@ class LLMPrompter:
         
         if missing_params:
             error_message = (
-                f"LLM output validation error for block '{block.name}': "
+                f"In file '{filename}', block '{block.name}', LLM output validation error: "
                 f"The following parameters declared with '--' in the Aura signature "
                 f"were not found in the generated Python code: {', '.join(missing_params)}. "
                 "Please ensure the LLM uses these parameters or adjust the Aura signature."
             )
-            # This is a post-LLM validation, not an LLM-reported error.
             raise AuraCompilationError(error_message)
             
         return generated_code, warnings_list
@@ -259,7 +284,9 @@ class LLMPrompter:
         self,
         block: BlockDecl,
         local_mod: AuraModule,
-        imported: Dict[str, AuraModule]
+        imported: Dict[str, AuraModule],
+        filename: str,
+        block_name_for_error: str
     ) -> str:
         lines: List[str] = []
         # 1) Block signature and body
@@ -267,32 +294,54 @@ class LLMPrompter:
         lines.append("{")
         lines.append(block.body)
         lines.append("}")
+        
         # 2) Reference items
-        refs = set(re.findall(r"@([A-Za-z0-9_.]+)", block.signature + "\n" + block.body))
-        ref_docs: List[str] = []
-        def add_doc(label: str, doc: str):
-            ref_docs.append(f"- {label}: {doc}")
-        for ref in sorted(refs):
-            if '.' in ref:
-                mod_alias, name = ref.split('.', 1)
+        refs_in_block_body_and_sig = set(re.findall(r"@([A-Za-z0-9_.]+)", block.signature + "\n" + block.body))
+        ref_docs_for_prompt: List[str] = []
+        resolved_ref_names: set[str] = set()
+
+        def add_resolved_doc(ref_token: str, doc_content: str):
+            ref_docs_for_prompt.append(f"- {ref_token}: {doc_content}")
+            resolved_ref_names.add(ref_token)
+
+        for ref_token in sorted(list(refs_in_block_body_and_sig)):
+            item_found = False
+            if '.' in ref_token: # Imported reference: module_alias.SymbolName
+                mod_alias, name_in_import = ref_token.split('.', 1)
                 mod_obj = imported.get(mod_alias)
                 if mod_obj:
                     for t in mod_obj.types:
-                        if t.name == name:
-                            add_doc(ref, t.doc)
-                    for b in mod_obj.blocks:
-                        if b.name == name:
-                            add_doc(ref, b.doc)
-            else:
+                        if t.name == name_in_import and t.doc: # Check t.doc is not empty
+                            add_resolved_doc(ref_token, t.doc)
+                            item_found = True; break
+                    if item_found: continue
+                    for b_imp in mod_obj.blocks:
+                        if b_imp.name == name_in_import and b_imp.doc: # Check b_imp.doc is not empty
+                            add_resolved_doc(ref_token, b_imp.doc)
+                            item_found = True; break
+            else: # Local reference: SymbolName
                 for t in local_mod.types:
-                    if t.name == ref:
-                        add_doc(ref, t.doc)
-                for b in local_mod.blocks:
-                    if b.name == ref:
-                        add_doc(ref, b.doc)
-        if ref_docs:
+                    if t.name == ref_token and t.doc: # Check t.doc is not empty
+                        add_resolved_doc(ref_token, t.doc)
+                        item_found = True; break
+                if item_found: continue
+                for b_loc in local_mod.blocks:
+                    if b_loc.name == ref_token and b_loc.doc: # Check b_loc.doc is not empty
+                        add_resolved_doc(ref_token, b_loc.doc)
+                        item_found = True; break
+        
+        unresolved_refs = refs_in_block_body_and_sig - resolved_ref_names
+        if unresolved_refs:
+            raise AuraUnresolvedReferenceError(
+                unresolved_refs=list(unresolved_refs), 
+                block_name=block_name_for_error, 
+                filename=filename
+            )
+
+        if ref_docs_for_prompt:
             lines.append("# Reference items (context only – no code generation)")
-            lines.extend(ref_docs)
+            lines.extend(ref_docs_for_prompt)
+        
         # 3) Python imports
         py_imports = [imp.raw for imp in local_mod.imports if not imp.is_aura]
         if py_imports:
@@ -305,16 +354,34 @@ class LLMPrompter:
 # ─────────────────────────────────────────────────────────────────────────────
 def compile_file(src: Path, out_dir: Path, model: str):
     parser = AuraParser()
-    text = src.read_text()
-    local_mod = parser.parse(text, src.stem)
+    try:
+        text = src.read_text()
+        local_mod = parser.parse(text, src.name)
+    except AuraCompilationError as e:
+        print(f"Parsing Error in '{src.name}': {e}", file=sys.stderr)
+        return
+    except Exception as e:
+        print(f"Unexpected Parsing Error in '{src.name}': {e}", file=sys.stderr)
+        return
+
     imported: Dict[str, AuraModule] = {}
     for imp in local_mod.imports:
         if imp.is_aura and imp.target:
             aura_path = Path(src.parent) / f"{imp.target}.aura"
             if aura_path.exists():
-                imported[imp.alias or imp.target] = parser.parse(aura_path.read_text(), imp.target)
-    prompter = LLMPrompter(model=model)
+                try:
+                    imported[imp.alias or imp.target] = parser.parse(aura_path.read_text(), aura_path.name)
+                except AuraCompilationError as e:
+                    print(f"Error parsing imported Aura module '{aura_path.name}': {e}", file=sys.stderr)
+                    return
+                except Exception as e:
+                    print(f"Unexpected error parsing imported Aura module '{aura_path.name}': {e}", file=sys.stderr)
+                    return
+            else:
+                print(f"Error: Imported Aura module '{aura_path}' not found.", file=sys.stderr)
+                return
 
+    prompter = LLMPrompter(model=model)
     sections: List[str] = []
     for imp in local_mod.imports:
         if not imp.is_aura:
@@ -325,7 +392,7 @@ def compile_file(src: Path, out_dir: Path, model: str):
     any_warnings_for_file = False
     for blk in local_mod.blocks:
         try:
-            code, block_warnings = prompter.compile_block(blk, local_mod, imported)
+            code, block_warnings = prompter.compile_block(blk, local_mod, imported, src.name)
             if block_warnings:
                 any_warnings_for_file = True
                 print(f"Warnings for block '{blk.name}' in '{src.name}':", file=sys.stderr)
@@ -344,10 +411,10 @@ def compile_file(src: Path, out_dir: Path, model: str):
             sections.append(code)
         except AuraCompilationError as e:
             print(f"Compilation Error in '{src.name}' for block '{blk.name}': {e}", file=sys.stderr)
-            return # Stop processing this file on fatal error
-        except RuntimeError as e: # Catch other runtime errors from LLM interaction
+            return
+        except RuntimeError as e:
             print(f"Runtime Error during compilation of '{src.name}' for block '{blk.name}': {e}", file=sys.stderr)
-            return # Stop processing this file
+            return
 
     main_section_match = re.search(r"# MAIN\s*$(.*)", text, re.MULTILINE | re.DOTALL)
     if main_section_match:
@@ -355,7 +422,7 @@ def compile_file(src: Path, out_dir: Path, model: str):
         sections.append(main_section_match.group(1).strip())
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_file_path = out_dir / f"{src.stem}.py"
+    out_file_path = out_dir / f"{local_mod.name}.py"
     out_file_path.write_text("\n".join(sections))
     
     status_emoji = "⚠️" if any_warnings_for_file else "✅"

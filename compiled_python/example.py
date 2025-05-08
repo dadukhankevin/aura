@@ -5,7 +5,6 @@ import numpy as np
 def square_all_values(input_array):
     squared_list = [x ** 2 for x in input_array]
     squared_array = np.array(squared_list)
-    # Code for displaying a popup window is not included as it requires additional context.
     return squared_list, squared_array
 
 # --- UNCOMPILED CODE ---
