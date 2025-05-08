@@ -1,0 +1,23 @@
+imports {
+  import numpy
+}
+
+desc BothKinds "Return a Python list and numpy array of squared values"
+
+desc def square_all_values(--input_array: @List):
+  "@BothKinds"
+{
+   Squares everything in the list returns @BothKinds
+   also display a popup window showing the results
+}
+
+# MAIN
+def main():
+    test_array = [1, 2, 3, 4, 5]
+    list_result, np_result = square_all_values(test_array)
+    print("Original array:", test_array)
+    print("List result:", list_result)
+    print("NumPy array result:", np_result)
+
+if __name__ == '__main__':
+    main() 

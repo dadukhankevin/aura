@@ -1,0 +1,70 @@
+imports {
+    import random
+    from typing import List, Tuple
+}
+
+desc BitString "A list of bits (0 or 1)"
+desc Population "A list of @BitString"
+desc Fitness "A float score for a bitstring"
+
+desc def random_bitstring(--length: int): "@BitString"
+{
+    Generate a new bitstring of length --length by choosing 0 or 1 at random
+    this returns the generated bitstring
+}
+
+desc def fitness(--bs: @BitString): "@Fitness"
+{
+    Compute the proportion of 1s in --bs
+    this returns the resulting fitness value
+}
+
+desc def select_two(--pop: @Population, --k: int): "( @BitString, @BitString )"
+{
+    Run a tournament: pick --k random individuals from --pop, evaluate their fitness,  
+    and return the top two as parents
+}
+
+desc def crossover(--p1: @BitString, --p2: @BitString): "@BitString"
+{
+    Choose a random crossover point, then combine prefix of --p1 with suffix of --p2  
+    this returns the child bitstring
+}
+
+desc def mutate(--bs: @BitString, --pm: float): "@BitString"
+{
+    For each bit in --bs, flip it with probability --pm  
+    this returns the mutated bitstring
+}
+
+desc def run_ga(
+    --pop_size: int,
+    --bit_length: int,
+    --generations: int,
+    --tourney_k: int,
+    --crossover_rate: float,
+    --mutation_rate: float
+  ): "@BitString"
+{
+    Initialize a population of size --pop_size using @random_bitstring  
+    Repeat for --generations:
+      • Evaluate all individuals’ fitness with @fitness  
+      • Sort population by fitness descending  
+      • Carry over the top 2 individuals unchanged (elitism)  
+      • While population size < --pop_size:
+          – Select two parents via @select_two  
+          – With probability --crossover_rate produce a child with @crossover,  
+            otherwise clone the first parent  
+          – Mutate the child via @mutate with --mutation_rate  
+          – Add child to the new population  
+      • Replace population with the new one  
+    After all generations, return the best individual (highest @fitness)
+}
+
+desc def main(): "Evolve a bitstring maximizing 1s"
+{
+    Call @run_ga with:
+      --pop_size=50, --bit_length=20, --generations=100,  
+      --tourney_k=5, --crossover_rate=0.7, --mutation_rate=0.01  
+    Print the returned bitstring and its @fitness
+}

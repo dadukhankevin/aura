@@ -1,79 +1,83 @@
+**Updating README syntax**
+
+The user wants a README similar to the first one they provided, but with an updated section for syntax rules. They've shared the original plus new syntax highlights, such as using "desc def", "desc class", braces, unified definitions, and reference tokens. I need to keep the structure of the original README but update the "Syntax Highlights" and code examples to reflect these changes. I'll carefully revise the example to show the new "desc def" format.
+
+
+Thought for 4 seconds
+
+
 # Aura
 
 ![MIT License](https://img.shields.io/badge/license-MIT-blue) ![Experimental](https://img.shields.io/badge/status-experimental-orange)
 
-> You know the feeling... You're sitting there, vibe-coding away, and suddenly it hits you: "I have no idea how my codebase works anymore".
+> You know the feeling... You're sitting there, vibe‑coding away, and suddenly it hits you: "I have no idea how my codebase works anymore".
 
-You've tried telling `claude-3.7-sonnet-new-final-smartest-max` to not "change too much" and to "please please only do what I tell you or else they will fire me." 
+You've tried telling `claude-3.7-sonnet-new-final-smartest-max` to not "change too much" and to "please please only do what I tell you or else they will fire me."
 
 Only to see thousands of inserted lines.
 
-Aura is made for you. It's what "English as a programming language" *should* be. **Reproducible, high level, precise.** 
+Aura is made for you. It's what "English as a programming language" *should* be. **Reproducible, high level, precise.**
 
 > ⚠️ **Note:** Aura is highly experimental...
 
 ---
 
 ## Table of Contents
-- [What is Aura Code?](#what-is-aura-code)
-- [Examples](#examples)
-- [Syntax Highlights](#syntax-highlights)
-- [Imports in Aura](#imports-in-aura)
-- [Getting Started](#getting-started)
-- [Why Aura?](#why-aura)
-- [Contributing](#contributing)
-- [License](#license)
-- [Example](#example)
+
+* [What is Aura Code?](#what-is-aura-code)
+* [Examples](#examples)
+* [Syntax Highlights](#syntax-highlights)
+* [Imports in Aura](#imports-in-aura)
+* [Getting Started](#getting-started)
+* [Why Aura?](#why-aura)
+* [Contributing](#contributing)
+* [License](#license)
+* [Example](#example)
 
 ---
 
 ## What is Aura Code?
 
-Aura introduces LLMs as a compiler, rather than the over-caffeinated intern.
+Aura introduces LLMs as a compiler, rather than the over‑caffeinated intern.
 
-### Aura is a domain-specific language that uses English as a high-level type system and prompt scaffold for LLM-compiled Python code.
+### Aura is a domain‑specific language that uses English as a high‑level type system and prompt scaffold for LLM‑compiled Python code.
 
 It lets you smoothly interpolate between natural language and Python code, in a way that ensures you know exactly what your code is doing, while keeping the benefits of natural language when you need it.
 
-Quit yappin here's an example:
+Quit yappin, here's an example:
 
 **Aura Code (`example.aura`)**
 
-```py
+```aura
 imports {
   import numpy
 }
-desc BothKinds "When returning arrays, return a python list version and numpy version in a tuple (list, array)"
 
-def --square_all_values(--input_array: @List):
-  """A function that squares all values in an array returns @BothKinds"""
-  --squared_result = all values in input_array squared
-  --combined = @BothKinds representation of squared_result
-  return combined
-``` 
+desc BothKinds "Return a Python list and numpy array of squared values"
 
-**Compiled Python Output (example_compiled.py)**
+desc def square_all_values(--input_array: @List):
+  "@BothKinds"
+{
+  --squared_list = [ x**2 for x in --input_array ]
+  --array        = numpy.array(--squared_list)
+  this returns (--squared_list, --array)
+}
+```
+
+**Compiled Python Output (`example_compiled.py`)**
+
 ```python
 import numpy
-from typing import List, Dict, Any, Optional, TypeAlias
+from typing import List, TypeAlias
 
-# Type Aliases from 'desc' blocks (for clarity)
-BothKinds: TypeAlias = Any # When returning arrays, return a python list version and numpy version in a tuple (list, array)
+# Type alias from desc
+BothKinds: TypeAlias = tuple[list[int], numpy.ndarray]
 
-# --- Block: aura_function:square_all_values ---
-
-
-def square_all_values(input_array: List):
-    """A function that squares all values in an array returns BothKinds"""
-    # Assuming input_array is a list or similar iterable of numbers
-    # LLM generates the logic based on the prompt "all values in input_array squared"
+def square_all_values(input_array: List[int]) -> BothKinds:
+    """Return a Python list and numpy array of squared values"""
     squared_list = [x**2 for x in input_array]
-    # LLM generates the logic based on the prompt "BothKinds representation of squared_result"
-    # and the context provided for @BothKinds
-    squared_result = numpy.array(squared_list)
-    combined = (squared_list, squared_result)
-    return combined
-
+    array = numpy.array(squared_list)
+    return squared_list, array
 ```
 
 > The above example includes everything you need to know about Aura *so far*.
@@ -86,17 +90,14 @@ Explore these examples to see Aura in action:
 
 ### PyTorch LSTM Shakespeare
 
-A character-level LSTM model trained on Shakespearean text.
+A character‑level LSTM model trained on Shakespearean text.
 
 **Compile:**
+
 ```bash
-# Ensure output directory exists
 mkdir -p compiled_python/pytorch_lstm_shakespeare
-
-# Compile the main file (dependencies compiled automatically)
-python compiler/compiler.py examples/pytorch_lstm_shakespeare/main.aura compiled_python/pytorch_lstm_shakespeare/main.py
-
-# Run the compiled code
+python compiler/compiler.py examples/pytorch_lstm_shakespeare/main.aura \
+    compiled_python/pytorch_lstm_shakespeare/main.py
 python compiled_python/pytorch_lstm_shakespeare/main.py 
 ```
 
@@ -105,75 +106,47 @@ python compiled_python/pytorch_lstm_shakespeare/main.py
 Demonstrates setting up a basic Flask server with authentication routes.
 
 **Compile:**
-```bash
-# Ensure output directory exists
-mkdir -p compiled_python/flask_auth_server
 
-# Compile (assuming main file is app.aura)
-python compiler/compiler.py examples/flask_auth_server/app.aura compiled_python/flask_auth_server/app.py 
+```bash
+mkdir -p compiled_python/flask_auth_server
+python compiler/compiler.py examples/flask_auth_server/app.aura \
+    compiled_python/flask_auth_server/app.py 
 ```
 
 ### Genetic Hello World (Conceptual)
 
-Illustrates a simple genetic algorithm trying to evolve the string "Hello, World!".
+Illustrates a simple genetic algorithm evolving the string "Hello, World!".
 
 **Compile:**
-```bash
-# Ensure output directory exists
-mkdir -p compiled_python/genetic_hello_world
 
-# Compile (assuming main file is main.aura)
-python compiler/compiler.py examples/genetic_hello_world/main.aura compiled_python/genetic_hello_world/main.py
+```bash
+mkdir -p compiled_python/genetic_hello_world
+python compiler/compiler.py examples/genetic_hello_world/main.aura \
+    compiled_python/genetic_hello_world/main.py
 ```
 
 ---
 
 ## Syntax Highlights
 
-You'll notice a few differences compared to normal Python. The first difference is that natural English is included in the code at any point. But it isn't only a prompt, and there are some strict syntax rules, that will make this work.
+Aura's new syntax uses explicit `desc def`/`desc class`, quoted descriptions, and braces for clear parsing:
 
-| Feature | Description |
-|---------|-------------|
-| **The Literal Symbol (`--`)** | Indicates variables or definitions (`--my_var`, `def --my_func`) that must be preserved verbatim in the compiled Python code. The compiler ensures these names exist in the output, throwing an error if the LLM forgets them. |
-| **The Reference Token (`@`)** | References types (`@List`), other Aura classes/functions (`@MyClass`, `@my_helper_func`), or imported Aura modules/items (`@my_module.some_item`). The compiler provides the definition or description of the referenced item as context to the LLM. |
-| **The Description Keyword (`desc`)** | Defines a semantic type or rule description (e.g., `desc MyType "Description here"`). This context is provided to the LLM when `@MyType` is referenced. |
-| **Documentation Strings (`"""..."""`)** | Required after `class` and `def` lines. They serve as standard Python docstrings and also provide crucial high-level context to the LLM compiler. |
-| **Natural Language Instructions** | Lines within Aura function/method bodies that are not comments or strict Aura syntax are treated as instructions for the LLM compiler to generate the corresponding Python code. |
-| **Comment Tokens (`#`)** | Standard Python comments are ignored by the LLM compiler and are not included in the prompts. |
+| Feature                        | Description                                                          |
+| ------------------------------ | -------------------------------------------------------------------- |
+| **`desc` keyword**             | Introduces a semantic declaration—types, functions, or classes. Always followed by a quoted description. |
+| **`desc def` / `desc class`**  | Define functions or classes. Example:<br><br>desc def name(--args): "Docstring" {<br>  body<br>}<br>desc class Name(--args): "Docstring" {<br>  body<br>}<br>|
+| **Braces (`{ … }`)**           | Delimit the block of English‑first instructions or hints. Eliminates Python‑style indentation ambiguity. |
+| **Literal symbol (`--`)**      | Marks parameters and variables that **must** appear verbatim in the compiled Python (e.g., `--my_var`). |
+| **Reference token (`@`)**      | Pulls in **only** the quoted description for a declared symbol (`@MyType`, `@my_func`, `@MyClass.method`). Used in bodies to surface high‑level intent to the LLM without re‑generating code for that symbol. |
+| **Quoted descriptions**        | Immediately after `desc`, the quoted string becomes the docstring in Python. |
+| **Natural Language Instructions** | Lines inside braces (that aren't `--` or `@` syntax) are prompts for the LLM to generate the corresponding Python logic. |
+| **Comment tokens (`#`)**       | Standard Python comments. Ignored by the LLM compiler and not part of prompts. |
 
 ---
 
 ## Imports in Aura
 
-The `imports { ... }` block at the top of the file handles both standard Python imports and imports of other Aura modules.
-
-```py
-imports {
-  # Standard Python Import (passed directly to output)
-  import os 
-  from typing import Dict
-  
-  # Import test_utils.aura, access its content via @utils
-  import aura test_utils as utils 
-  
-  # Import test_base.aura, access its content via @base
-  import aura test_base as base 
-}
-```
-
-**How Aura Imports Compile:**
-
-*   Standard Python imports (`import os`) are copied directly to the generated Python file.
-*   Aura imports (`import aura test_utils as utils`) trigger the compilation of the dependency (`test_utils.aura` -> `compiled_python/test_utils.py`) and add a corresponding Python import to the current file:
-    ```python
-    # Assuming output directory is 'compiled_python'
-    import compiled_python.test_utils as utils
-    import compiled_python.test_base as base
-    ```
-*   You can then reference items from the imported module using the alias: `@utils.some_function`, `@base.BaseClass`.
-*   LLM-generated code blocks will not include any import statements. If your code requires additional modules, add them to the `imports` block at the top of the Aura file.
-
----
+The `imports { ... }` block at the top handles both real Python imports and Aura module imports:
 
 ## Getting Started
 
@@ -188,47 +161,36 @@ pip install -r requirements.txt
 
 # Create environment file for API key
 cp .env.example .env
-# --> Add your AURA_LLM_API_KEY to the new .env file <--- 
+# --> Add your AURA_LLM_API_KEY and optionally AURA_LLM_BASE_URL
 ```
-
-### API Key Setup (.env)
-
-The compiler uses an LLM (currently via Groq, but configurable) to generate Python code for Aura blocks. You need to provide your API key.
-
-1.  **Copy the example:** `cp .env.example .env`
-2.  **Edit `.env`:** Open the newly created `.env` file and replace `"YOUR_AURA_LLM_API_KEY_HERE"` with your actual LLM API key. You can optionally set the `AURA_LLM_BASE_URL` if you are using a different endpoint.
-
-> 💡 The `.env` file is included in `.gitignore` to prevent accidentally committing your key.
 
 ### Using the Compiler
 
-Run the compiler script directly using Python from your project root:
+**Compile a single file:**
 
-**Compile a Single File:**
 ```bash
-# python <compiler_script> <input_aura_file> <output_python_file>
 python compiler/compiler.py path/to/module.aura path/to/output.py
 ```
 
-**Compile an Entire Directory:**
+**Compile an entire directory:**
+
 ```bash
-# python <compiler_script> <input_aura_directory> <output_python_directory>
 python compiler/compiler.py aura_src_dir compiled_python
 ```
 
-> The compiler will automatically detect and compile imported `.aura` modules first.
+The compiler will automatically detect and compile imported `.aura` modules first.
 
 ---
 
 ## Why Aura?
 
-Aura streamlines the creation of Python classes and data models by combining:
+Aura streamlines Python development by combining:
 
-1. **High-level DSL Syntax** for concise declarations.
-2. **Static Validation** to catch undeclared variables or missing references.
-3. **AI-Assisted Code Generation** to fill in method bodies and reduce boilerplate.
+1. **High‑level DSL syntax** for concise, intent‑driven code.
+2. **Static validation** to catch missing `--` variables or undeclared references.
+3. **AI‑assisted generation** to fill in method bodies from English instructions.
 
-Use Aura when you want precise control over your project *and* english as code.
+Use Aura when you want precise control *and* the expressiveness of English.
 
 ---
 
@@ -236,23 +198,21 @@ Use Aura when you want precise control over your project *and* english as code.
 
 Contributions welcome! Please fork the repo and open PRs for:
 
-- New syntax features
-- Improved error messages
-- Enhanced LLM compiling strategies
-- Performance optimizations
+* New syntax features
+* Enhanced error messages
+* Improved LLM compilation strategies
+* Performance optimizations
 
 ---
 
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-Please attribute (Daniel Losey) (:
+Please attribute to Daniel Losey.
 
 ---
 
 ## Example
-
-Compile with:
 
 ```bash
 # Compile the main file (dependencies compiled automatically)
