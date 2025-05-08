@@ -89,41 +89,21 @@ def square_all_values(input_array: List[int]) -> BothKinds:
 
 Explore these examples to see Aura in action:
 
-### PyTorch LSTM Shakespeare
+### Genetic Algorithm - Evolving a String
 
-A character‑level LSTM model trained on Shakespearean text.
+Illustrates a simple genetic algorithm evolving a target string (e.g., "AuraIsCool!").
 
-**Compile:**
-
-```bash
-mkdir -p compiled_python/pytorch_lstm_shakespeare
-python compiler/compiler.py examples/pytorch_lstm_shakespeare/main.aura \
-    compiled_python/pytorch_lstm_shakespeare/main.py
-python compiled_python/pytorch_lstm_shakespeare/main.py 
-```
-
-### Flask Authentication Server (Conceptual)
-
-Demonstrates setting up a basic Flask server with authentication routes.
-
-**Compile:**
+**Compile & Run:**
 
 ```bash
-mkdir -p compiled_python/flask_auth_server
-python compiler/compiler.py examples/flask_auth_server/app.aura \
-    compiled_python/flask_auth_server/app.py 
-```
+# Ensure compiled_python directory exists
+mkdir -p compiled_python
 
-### Genetic Hello World (Conceptual)
+# Compile the Aura file
+python compiler.py examples/genetic_algorithm_string.aura compiled_python/genetic_algorithm_string.py
 
-Illustrates a simple genetic algorithm evolving the string "Hello, World!".
-
-**Compile:**
-
-```bash
-mkdir -p compiled_python/genetic_hello_world
-python compiler/compiler.py examples/genetic_hello_world/main.aura \
-    compiled_python/genetic_hello_world/main.py
+# Run the compiled Python script
+python compiled_python/genetic_algorithm_string.py
 ```
 
 ---
@@ -223,9 +203,9 @@ The LLM can also issue warnings for non-critical issues. Compilation will procee
 
 Aura streamlines Python development by combining:
 
-1. **High‑level DSL syntax** for concise, intent‑driven code.
-2. **Robust compiler feedback**, including LLM-reported errors/warnings and static validations (like ensuring `--` variables are used or references are declared). This creates a more predictable and reliable interaction with AI-assisted code generation.
-3. **AI‑assisted generation** to fill in method bodies from English instructions.
+1.  **High‑level DSL syntax** for concise, intent‑driven code.
+2.  **Robust compiler feedback**, including LLM-reported errors/warnings and static validations (like ensuring `--` variables are used or references are declared). This creates a more predictable and reliable interaction with AI-assisted code generation.
+3.  **AI‑assisted generation** to fill in method bodies from English instructions.
 
 Use Aura when you want precise control, the expressiveness of English, and a smarter, more communicative compilation process.
 
